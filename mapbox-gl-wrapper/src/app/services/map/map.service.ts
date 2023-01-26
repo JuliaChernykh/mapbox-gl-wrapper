@@ -7,12 +7,16 @@ import {
   TOKEN_MAPBOXGL,
   TOKEN_MAPTILER,
 } from './constants';
+import { HttpService, Pin } from '../http/http.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class MapService {
   map: mapboxgl.Map;
+  pins: Pin[];
+
+  constructor(private httpService: HttpService) {}
 
   drawMap(mapElement: HTMLDivElement, options?: MapOptions): void {
     this.map = new mapboxgl.Map({
@@ -23,6 +27,24 @@ export class MapService {
       ...options,
     });
     this.map.addControl(new mapboxgl.NavigationControl());
+  }
+
+  addPins() {
+    this.httpService.fetchPins().subscribe((data) => {
+      this.pins = data.records.map((record: any) => ({
+        latitude: record.geocode.Latitude,
+        longitude: record.geocode.Longitude,
+      }));
+      console.log(this.pins);
+      for (const pin of this.pins) {
+        const el = document.createElement('div');
+        el.className = 'pin';
+
+        new mapboxgl.Marker(el)
+          .setLngLat([Number(pin.longitude), Number(pin.latitude)])
+          .addTo(this.map);
+      }
+    });
   }
 
   removeMap(): void {
