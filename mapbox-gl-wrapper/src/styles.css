@@ -1,1 +1,21 @@
-/* You can add global styles to this file, and also import other style files */
+/*.pin {*/
+/*  background-image: url("../src/images/pin-icon.png");*/
+/*  background-size: cover;*/
+/*  height: 40px;*/
+/*  width: 30px;*/
+/*  cursor: pointer;*/
+/*}*/
+
+/*.mapboxgl-popup {*/
+/*  max-width: 200px;*/
+/*  border-radius: 8px;*/
+/*}*/
+
+/*.mapboxgl-popup-content {*/
+/*  text-align: center;*/
+/*  font-family: 'Open Sans', sans-serif;*/
+/*}*/
+
+/*.mapboxgl-popup-content > button {*/
+/*  outline: none;*/
+/*}*/
