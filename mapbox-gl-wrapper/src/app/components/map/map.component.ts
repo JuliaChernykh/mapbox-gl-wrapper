@@ -23,7 +23,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     this.mapService.drawMap(this.map.nativeElement);
-    this.mapService.addPins();
   }
 
   ngOnDestroy() {

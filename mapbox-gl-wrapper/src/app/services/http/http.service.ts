@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { catchError, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { MapItems } from '../../types/types';
+import { HttpPath } from './constants';
 
 @Injectable({
   providedIn: 'root',
@@ -8,23 +10,16 @@ import { HttpClient } from '@angular/common/http';
 export class HttpService {
   constructor(private http: HttpClient) {}
 
-  fetchPins() {
+  fetchPins(): Observable<MapItems> {
     return this.http
-      .get<any>(
-        'https://app.smartapartmentdata.com/List/json/listItems.aspx?listID=7892472&token=AD6110320424834934DE62FD2935A49264B6D947&receipt=undefined'
-      )
-      .pipe(catchError(this.handleError<any>([])));
+      .get<MapItems>(HttpPath.FetchPinsUrl)
+      .pipe(catchError(this.handleError<MapItems>({ records: [] })));
   }
 
   private handleError<T>(res?: T) {
     return (error: any): Observable<T> => {
-      console.error('error1234', error);
+      console.error(error);
       return of(res as T);
     };
   }
 }
-
-export type Pin = {
-  latitude: string;
-  longitude: string;
-};
