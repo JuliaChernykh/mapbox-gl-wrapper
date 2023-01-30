@@ -5,12 +5,10 @@ import {
   defaultMapOptions,
   LayerId,
   MAP_STYLE_URL,
-  PIN_ICON_URL,
   TOKEN_MAPBOXGL,
   TOKEN_MAPTILER,
 } from './constants';
 import { HttpService } from '../http/http.service';
-import { ActionPanelComponent } from '../../components/action-panel/action-panel.component';
 
 @Injectable({
   providedIn: 'root',
@@ -89,34 +87,12 @@ export class MapService {
         })
       );
 
-      // this.map.loadImage(PIN_ICON_URL, (error, image) => {
-      //   if (error) throw error;
-      //   this.map.addImage(`${LayerId.Pins}-img`, image as HTMLImageElement, {
-      //     sdf: true,
-      //   });
       this.addSource(
         LayerId.Pins,
         'geojson',
         'FeatureCollection',
         this.features
       );
-      //   this.addLayer(
-      //     LayerId.Pins,
-      //     'symbol',
-      //     {
-      //       'icon-image': `${LayerId.Pins}-img`,
-      //     },
-      //     {
-      //       'icon-color': [
-      //         'case',
-      //         ['boolean', ['feature-state', 'selected'], false],
-      //         '#7EB09B',
-      //         '#8D86C9',
-      //       ],
-      //     }
-      //   );
-      //   this.setCursorOnLayer(LayerId.Pins);
-      // });
 
       this.map.on('render', () => {
         if (!this.map.isSourceLoaded(LayerId.Pins)) return;
@@ -249,13 +225,6 @@ export class MapService {
         });
       });
     }
-    // this.map.on('click', LayerId.Pins, (e) => {
-    //   if (!e.features || !('coordinates' in e.features[0].geometry)) return;
-    //   this.map.flyTo({
-    //     center: e.features[0].geometry.coordinates as mapboxgl.LngLatLike,
-    //     zoom: 14,
-    //   });
-    // });
   }
 
   enableChangingPin(): void {
@@ -269,22 +238,6 @@ export class MapService {
         this.selectedPin = el;
       });
     }
-    // let clickedStateId: number | string | undefined;
-    //
-    // this.map.on('click', LayerId.Pins, (e) => {
-    //   if (!e.features) return;
-    //   if (clickedStateId !== undefined) {
-    //     this.map.setFeatureState(
-    //       { source: LayerId.Pins, id: clickedStateId },
-    //       { selected: false }
-    //     );
-    //   }
-    //   clickedStateId = e.features[0].id;
-    //   this.map.setFeatureState(
-    //     { source: LayerId.Pins, id: clickedStateId },
-    //     { selected: true }
-    //   );
-    // });
   }
 
   enablePopups(): void {
@@ -306,27 +259,6 @@ export class MapService {
           .addTo(this.map);
       });
     }
-    // this.map.on('click', LayerId.Pins, (e: any) => {
-    //   if (!e.features) return;
-    //
-    //   const coordinates = e.features[0].geometry.coordinates.slice();
-    //   const { name, photo, streetAddress, favorite, listID, propertyID } =
-    //     e.features[0].properties;
-    //   console.log(listID, propertyID);
-    //
-    //   const description = `<button id="toggleAddToFavorites">${
-    //     favorite ? 'Dislike' : 'Like'
-    //   }</button><p>${name}</p><p>${streetAddress}</p><img src="${photo}"/>`;
-    //
-    //   while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-    //     coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-    //   }
-    //
-    //   new mapboxgl.Popup()
-    //     .setLngLat(coordinates)
-    //     .setHTML(description)
-    //     .addTo(this.map);
-    //
     //   document
     //     ?.getElementById('toggleAddToFavorites')
     //     ?.addEventListener('click', (event) => {
@@ -351,21 +283,6 @@ export class MapService {
       center: coordinates,
       zoom: 11,
     });
-  }
-
-  addLayer(
-    id: string,
-    type: mapboxgl.AnyLayer['type'],
-    layout: any,
-    paint: any
-  ): void {
-    this.map.addLayer({
-      id,
-      type,
-      source: id,
-      layout,
-      paint,
-    } as mapboxgl.AnyLayer);
   }
 
   addSource(
