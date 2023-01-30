@@ -9,19 +9,27 @@ import { MapService } from '../../services/map/map.service';
 export class ActionPanelComponent {
   constructor(private mapService: MapService) {}
 
-  handleLoadPins() {
+  handleLoadPins(): void {
     this.mapService.drawPins();
   }
 
-  handleEnableZoomingToPin() {
+  handleEnableZoomingToPin(): void {
     this.mapService.enableZoomingToPin();
   }
 
-  handleCenterMapByPins() {
+  handleCenterMapByPins(): void {
     this.mapService.centerMapByPins();
   }
 
-  handleEnableChangingPin() {
+  handleDrawClusters(): void {
+    this.mapService.drawClusters();
+  }
+
+  handleEnablePopups(): void {
+    this.mapService.enablePopups();
+  }
+
+  handleEnableChangingPin(): void {
     this.mapService.enableChangingPin();
   }
 }

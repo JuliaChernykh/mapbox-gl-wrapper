@@ -18,4 +18,5 @@ export const defaultMapOptions: MapOptions = {
 
 export enum LayerId {
   Pins = 'pins',
+  Clusters = 'clusters',
 }
