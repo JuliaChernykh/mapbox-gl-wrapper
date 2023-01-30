@@ -1,6 +1,24 @@
 <div class="container">
-  <button (click)="handleLoadPins()">Load pins</button>
-  <button (click)="handleEnableZoomingToPin()">Enable zooming to pin</button>
-  <button (click)="handleCenterMapByPins()">Zoom to a center of the group of pins</button>
-  <button (click)="handleEnableChangingPin()">Enable changing pin</button>
+  <button (click)="handleLoadData()" [disabled]="isLoadDataButtonClicked" class="button">Load data</button>
+  <div class="radio-button">
+    <div>
+      <input (change)="setSelected(DataView.IndividualPins)" [checked]="selectedDataView$ === DataView.IndividualPins"
+             id="pins" type="radio">
+      <label for="pins">Show as pins</label>
+    </div>
+    <div>
+      <input (change)="setSelected(DataView.Clusters)" [checked]="selectedDataView$ === DataView.Clusters" id="clusters"
+             type="radio">
+      <label for="clusters">Show as clusters</label><br>
+    </div>
+  </div>
+  <button (click)="handleCenterMapByPins()" class="button">Center the map</button>
+  <button (click)="enableZoomingToPin()" [disabled]="isEnableZoomingToPinButtonClicked" class="button">Enable zooming to
+    pin
+  </button>
+  <button (click)="enableChangingPin()" [disabled]="isEnableChangingPinButtonClicked" class="button">Enable changing pin
+    on
+    select
+  </button>
+  <button (click)="enablePopups()" [disabled]="isEnablePopupsButtonClicked" class="button">Enable popups</button>
 </div>
