@@ -5,7 +5,7 @@ export type MapOptions = {
   zoom: number;
 };
 
-export type MapItems = {
+export type PinsData = {
   records: Record[];
 };
 
@@ -23,11 +23,19 @@ type Record = {
 };
 
 export type Pin = {
-  listID: number;
-  propertyID: number;
-  name: string;
-  coordinates: [number, number];
-  favorite: boolean;
-  streetAddress: string;
-  photo: string;
+  type: string;
+  geometry: {
+    type: string;
+    coordinates: [number, number];
+  };
+  properties: {
+    listID: number;
+    propertyID: number;
+    name: string;
+    favorite: boolean;
+    streetAddress: string;
+    photo: string;
+    selected?: boolean;
+  };
+  id: number;
 };

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { catchError, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { MapItems } from '../../types/types';
+import { PinsData } from '../../types/types';
 import { HttpPath, REQUEST_TOKEN } from './constants';
 
 @Injectable({
@@ -10,10 +10,10 @@ import { HttpPath, REQUEST_TOKEN } from './constants';
 export class HttpService {
   constructor(private http: HttpClient) {}
 
-  fetchPins(): Observable<MapItems> {
+  fetchData(): Observable<PinsData> {
     return this.http
-      .get<MapItems>(HttpPath.FetchPinsUrl)
-      .pipe(catchError(this.handleError<MapItems>({ records: [] })));
+      .get<PinsData>(HttpPath.FetchPinsUrl)
+      .pipe(catchError(this.handleError<PinsData>({ records: [] })));
   }
 
   updateFavorites(

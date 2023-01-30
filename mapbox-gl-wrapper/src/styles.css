@@ -6,11 +6,11 @@
   cursor: pointer;
 }
 
-.pin.favorite {
-  background-image: url("../src/images/heart-icon.png");
-  height: 30px;
-  width: 30px;
-}
+/*.pin.favorite {*/
+/*  background-image: url("../src/images/heart-icon.png");*/
+/*  height: 30px;*/
+/*  width: 30px;*/
+/*}*/
 
 .pin.selected {
   background-image: url("../src/images/pin-selected-icon.png");
@@ -18,11 +18,11 @@
   width: 30px;
 }
 
-.pin.favorite.selected {
-  background-image: url("../src/images/heart-icon-selected.png");
-  height: 30px;
-  width: 30px;
-}
+/*.pin.favorite.selected {*/
+/*  background-image: url("../src/images/heart-icon-selected.png");*/
+/*  height: 30px;*/
+/*  width: 30px;*/
+/*}*/
 
 .mapboxgl-popup {
   max-width: 200px;

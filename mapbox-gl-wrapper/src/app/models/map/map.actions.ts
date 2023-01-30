@@ -1,5 +1,12 @@
-import { createAction } from '@ngrx/store';
+import { createAction, props } from '@ngrx/store';
+import { DataView } from '../../services/map/constants';
+import { PinsData } from '../../types/types';
 
-export const increment = createAction('[Counter Component] Increment');
-export const decrement = createAction('[Counter Component] Decrement');
-export const reset = createAction('[Counter Component] Reset');
+export const setSelectedDataView = createAction(
+  '[Action Panel] SetSelectedDataView',
+  props<{ dataView: DataView }>()
+);
+export const setPinsData = createAction(
+  '[Action Panel] LoadDataSuccess',
+  props<PinsData>()
+);

@@ -2,159 +2,108 @@ import { Injectable } from '@angular/core';
 import * as mapboxgl from 'mapbox-gl';
 import { MapOptions, Pin } from '../../types/types';
 import {
-  defaultMapOptions,
+  CLUSTER_SOURCE_OPTIONS,
+  DataView,
   LayerId,
+  MAP_OPTIONS,
   MAP_STYLE_URL,
+  SourceId,
   TOKEN_MAPBOXGL,
   TOKEN_MAPTILER,
 } from './constants';
 import { HttpService } from '../http/http.service';
+import { Store } from '@ngrx/store';
+import { MapStoreState } from '../../models/map/types';
 
 @Injectable({
   providedIn: 'root',
 })
 export class MapService {
   map: mapboxgl.Map;
-  pins: Pin[];
-  features: any[];
-  markers: any = {};
-  markersOnScreen: any = {};
-  selectedPin: any = null;
+  features: Pin[] = [];
+  pinsOnScreen: any = {};
+  selectedPinEl: HTMLElement | null = null;
+  dataView: DataView;
 
-  constructor(private httpService: HttpService) {}
+  constructor(
+    private httpService: HttpService,
+    private store: Store<{ mapStore: MapStoreState }>
+  ) {
+    this.store
+      .select((state) => state.mapStore.pins)
+      .subscribe((data) => {
+        this.features = data;
+        if (this.dataView === DataView.Clusters) {
+          this.drawClusteredPins();
+        } else {
+          this.drawIndividualPins();
+        }
+      });
+    this.store
+      .select((state) => state.mapStore.selectedDataView)
+      .subscribe((dataView) => {
+        this.dataView = dataView;
+        this.clearMap();
+        if (dataView === DataView.Clusters) {
+          this.drawClusteredPins();
+        } else {
+          this.drawIndividualPins();
+        }
+      });
+  }
 
-  drawMap(mapElement: HTMLDivElement, options?: MapOptions): void {
+  drawMap(mapElement: HTMLDivElement): void {
     this.map = new mapboxgl.Map({
       accessToken: TOKEN_MAPBOXGL,
       container: mapElement,
       style: `${MAP_STYLE_URL}?key=${TOKEN_MAPTILER}`,
-      ...defaultMapOptions,
-      ...options,
+      ...MAP_OPTIONS,
     });
     this.map.addControl(new mapboxgl.NavigationControl());
   }
 
-  drawPins(): void {
-    this.httpService.fetchPins().subscribe((data) => {
-      // store
-      this.pins = data.records.map(
-        ({
-          name,
-          favorite,
-          streetAddress,
-          photo,
-          listID,
-          propertyID,
-          geocode,
-        }) => ({
-          name,
-          coordinates: [Number(geocode.Longitude), Number(geocode.Latitude)],
-          listID,
-          propertyID,
-          favorite,
-          streetAddress,
-          photo,
-        })
-      );
+  drawIndividualPins(): void {
+    // TODO: remove clusters
+    if (this.features.length === 0) return;
 
-      this.features = this.pins.map(
-        (
-          {
-            coordinates,
-            name,
-            favorite,
-            streetAddress,
-            photo,
-            listID,
-            propertyID,
-          },
-          idx
-        ) => ({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates,
-          },
-          properties: {
-            name,
-            favorite,
-            streetAddress,
-            photo,
-            listID,
-            propertyID,
-          },
-          id: idx,
-        })
-      );
-
-      this.addSource(
-        LayerId.Pins,
-        'geojson',
-        'FeatureCollection',
-        this.features
-      );
-
-      this.map.on('render', () => {
-        if (!this.map.isSourceLoaded(LayerId.Pins)) return;
-        this.updateMarkers();
-      });
-    });
-  }
-
-  updateMarkers(): void {
-    const newMarkers: any = {};
-    // const features = this.map.querySourceFeatures(LayerId.Pins) as any;
-    // console.log(features);
-
-    // for every cluster on the screen, create an HTML marker for it (if we didn't yet),
-    // and add it to the map if it's not there already
     for (const feature of this.features) {
       const coords = feature.geometry.coordinates;
-      // const props = feature.properties;
-      // if (!props.cluster) continue;
       const id = feature.id;
 
-      let marker = this.markers[id];
-      if (!marker) {
-        const el = document.createElement('div');
-        el.className = 'pin';
-        if (feature.properties.favorite) {
-          el.classList.add('favorite');
-        }
-        if (feature.properties.selected) {
-          el.classList.add('selected');
-        }
-        marker = this.markers[id] = new mapboxgl.Marker({
-          element: el,
-        }).setLngLat(coords);
+      const el = document.createElement('div');
+      el.className = 'pin';
+      if (feature.properties.favorite) {
+        el.classList.add('favorite');
       }
-      newMarkers[id] = marker;
+      if (feature.properties.selected) {
+        el.classList.add('selected');
+      }
+      const marker = new mapboxgl.Marker({
+        element: el,
+      }).setLngLat(coords);
 
-      if (!this.markersOnScreen[id]) marker.addTo(this.map);
+      this.pinsOnScreen[id] = marker;
+      marker.addTo(this.map);
     }
-    // for every marker we've added previously, remove those that are no longer visible
-    for (const id in this.markersOnScreen) {
-      if (!newMarkers[id]) this.markersOnScreen[id].remove();
-    }
-    this.markersOnScreen = newMarkers;
   }
 
-  drawClusters(): void {
-    this.map.setLayoutProperty(LayerId.Pins, 'visibility', 'none');
-    this.map.addSource(LayerId.Clusters, {
+  drawClusteredPins(): void {
+    // TODO: remove pins
+    if (this.features.length === 0) return;
+
+    this.map.addSource(SourceId.Clusters, {
       type: 'geojson',
       data: {
         type: 'FeatureCollection',
-        features: this.features,
+        features: this.features as any,
       },
-      cluster: true,
-      clusterMaxZoom: 14,
-      clusterRadius: 50,
+      ...CLUSTER_SOURCE_OPTIONS,
     });
+
     this.map.addLayer({
       id: LayerId.Clusters,
       type: 'circle',
-      source: LayerId.Clusters,
+      source: SourceId.Clusters,
       filter: ['has', 'point_count'],
       paint: {
         'circle-color': [
@@ -171,9 +120,9 @@ export class MapService {
     });
 
     this.map.addLayer({
-      id: 'cluster-count',
+      id: LayerId.ClusterCount,
       type: 'symbol',
-      source: LayerId.Clusters,
+      source: SourceId.Clusters,
       filter: ['has', 'point_count'],
       layout: {
         'text-field': ['get', 'point_count_abbreviated'],
@@ -183,81 +132,129 @@ export class MapService {
     });
 
     this.map.addLayer({
-      id: 'unclustered-point',
+      id: LayerId.UnclusteredPoints,
       type: 'circle',
-      source: LayerId.Clusters,
+      source: SourceId.Clusters,
       filter: ['!', ['has', 'point_count']],
       paint: {
-        'circle-color': '#476A6F',
+        'circle-color': [
+          'case',
+          ['boolean', ['feature-state', 'selected'], false],
+          '#8D86C9',
+          '#476A6F',
+        ],
         'circle-radius': 8,
       },
     });
 
-    this.map.on('click', LayerId.Clusters, (e) => {
-      const features = this.map.queryRenderedFeatures(e.point, {
-        layers: [LayerId.Clusters],
-      }) as any;
-      const clusterId = features[0].properties?.['cluster_id'];
-      const source = this.map.getSource(
-        LayerId.Clusters
-      ) as mapboxgl.GeoJSONSource;
-      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err) return;
-        this.map.easeTo({
-          center: features[0].geometry?.coordinates as mapboxgl.LngLatLike,
-          zoom: zoom,
-        });
-      });
-    });
+    this.setZoomingOnCluster();
     this.setCursorOnLayer(LayerId.Clusters);
+    this.setCursorOnLayer(LayerId.UnclusteredPoints);
+  }
+
+  clearMap(): void {
+    if (this.dataView === DataView.Clusters) {
+      this.removeIndividualPins();
+    } else {
+      this.removeClusteredPins();
+    }
+  }
+
+  removeClusteredPins(): void {
+    if (!this.map || !this.map.getSource(SourceId.Clusters)) return;
+    this.map.removeLayer(LayerId.UnclusteredPoints);
+    this.map.removeLayer(LayerId.ClusterCount);
+    this.map.removeLayer(LayerId.Clusters);
+    this.map.removeSource(SourceId.Clusters);
+  }
+
+  removeIndividualPins(): void {
+    for (const key in this.pinsOnScreen) {
+      this.pinsOnScreen[key].remove();
+    }
   }
 
   enableZoomingToPin(): void {
-    for (const key in this.markersOnScreen) {
-      const el = this.markersOnScreen[key].getElement();
+    if (this.dataView === DataView.Clusters) {
+      this.enableZoomingToClusteredPin();
+    } else {
+      this.enableZoomingToIndividualPin();
+    }
+  }
+
+  enableZoomingToIndividualPin(): void {
+    for (const key in this.pinsOnScreen) {
+      const el = this.pinsOnScreen[key].getElement();
       el.addEventListener('click', () => {
-        const coordinates = this.markersOnScreen[key].getLngLat();
-        const lng = coordinates['lng'];
-        const lat = coordinates['lat'];
+        const lngLat = this.pinsOnScreen[key].getLngLat();
         this.map.flyTo({
-          center: [lng, lat],
+          center: [lngLat['lng'], lngLat['lat']],
           zoom: 14,
         });
       });
     }
   }
 
+  enableZoomingToClusteredPin(): void {
+    this.map.on('click', LayerId.UnclusteredPoints, (e) => {
+      if (
+        !e.features ||
+        !('coordinates' in e.features[0].geometry) ||
+        this.map.getZoom() >= 14
+      )
+        return;
+      this.map.flyTo({
+        center: e.features[0].geometry.coordinates as mapboxgl.LngLatLike,
+        zoom: 14,
+      });
+    });
+  }
+
   enableChangingPin(): void {
-    for (const key in this.markersOnScreen) {
-      const el = this.markersOnScreen[key].getElement();
+    if (this.dataView === DataView.Clusters) {
+      this.enableChangingClusteredPin();
+    } else {
+      this.enableChangingIndividualPin();
+    }
+  }
+
+  enableChangingClusteredPin(): void {
+    let clickedStateId: number | string | undefined;
+
+    this.map.on('click', LayerId.UnclusteredPoints, (e) => {
+      if (!e.features) return;
+      if (clickedStateId !== undefined) {
+        this.map.setFeatureState(
+          { source: SourceId.Clusters, id: clickedStateId },
+          { selected: false }
+        );
+      }
+      clickedStateId = e.features[0].id;
+      this.map.setFeatureState(
+        { source: SourceId.Clusters, id: clickedStateId },
+        { selected: true }
+      );
+    });
+  }
+
+  enableChangingIndividualPin(): void {
+    for (const key in this.pinsOnScreen) {
+      const el = this.pinsOnScreen[key].getElement();
       el.addEventListener('click', () => {
-        if (this.selectedPin) {
-          this.selectedPin.classList.remove('selected');
+        if (this.selectedPinEl) {
+          this.selectedPinEl.classList.remove('selected');
         }
         el.classList.add('selected');
-        this.selectedPin = el;
+        this.selectedPinEl = el;
       });
     }
   }
 
   enablePopups(): void {
-    for (const feature of this.features) {
-      if (!this.markersOnScreen[feature.id]) return;
-
-      const el = this.markersOnScreen[feature.id].getElement();
-      el.addEventListener('click', () => {
-        const { name, photo, streetAddress, favorite } = feature.properties;
-
-        const description = `<button id="toggleAddToFavorites">${
-          favorite ? 'Dislike' : 'Like'
-        }</button><p>${name}</p><p>${streetAddress}</p><img src="${photo}"/>`;
-        this.markersOnScreen[feature.id]
-          .setPopup(
-            new mapboxgl.Popup({ offset: 25 }) // add popups
-              .setHTML(description)
-          )
-          .addTo(this.map);
-      });
+    if (this.dataView === DataView.Clusters) {
+      this.enablePopupForClusteredPin();
+    } else {
+      this.enablePopupForIndividualPin();
     }
     //   document
     //     ?.getElementById('toggleAddToFavorites')
@@ -266,6 +263,48 @@ export class MapService {
     //       e.features[0].properties.favorite = !favorite;
     //     });
     // });
+  }
+
+  enablePopupForClusteredPin(): void {
+    this.map.on('click', LayerId.UnclusteredPoints, (e: any) => {
+      if (!e.features) return;
+
+      const coordinates = e.features[0].geometry.coordinates.slice();
+      const { name, photo, streetAddress, favorite, listID, propertyID } =
+        e.features[0].properties;
+
+      const description = `<button id="toggleAddToFavorites">${
+        favorite ? 'Dislike' : 'Like'
+      }</button><p>${name}</p><p>${streetAddress}</p><img src="${photo}"/>`;
+
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+
+      new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(description)
+        .addTo(this.map);
+    });
+  }
+
+  enablePopupForIndividualPin(): void {
+    for (const feature of this.features) {
+      if (!this.pinsOnScreen[feature.id]) return;
+
+      const el = this.pinsOnScreen[feature.id].getElement();
+      el.addEventListener('click', () => {
+        const { name, photo, streetAddress, favorite } = feature.properties;
+
+        const description = `<button id="toggleAddToFavorites">${
+          favorite ? 'Dislike' : 'Like'
+        }</button><p>${name}</p><p>${streetAddress}</p><img src="${photo}" alt=""/>`;
+
+        this.pinsOnScreen[feature.id]
+          .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(description))
+          .addTo(this.map);
+      });
+    }
   }
 
   toggleAddToFavorites(
@@ -285,25 +324,11 @@ export class MapService {
     });
   }
 
-  addSource(
-    id: string,
-    type: mapboxgl.AnySourceData['type'],
-    dataType: string,
-    features: any
-  ): void {
-    this.map.addSource(id, {
-      type,
-      data: {
-        type: dataType,
-        features,
-      },
-    } as mapboxgl.AnySourceData);
-  }
-
   getCenterCoordinates(): [number, number] {
-    let [minX, minY] = this.pins[0].coordinates;
-    let [maxX, maxY] = this.pins[0].coordinates;
-    this.pins.forEach(({ coordinates }) => {
+    let [minX, minY] = this.features[0].geometry.coordinates;
+    let [maxX, maxY] = this.features[0].geometry.coordinates;
+    this.features.forEach(({ geometry }) => {
+      const { coordinates } = geometry;
       minX = Math.min(coordinates[0], minX);
       maxX = Math.max(coordinates[0], maxX);
       minY = Math.min(coordinates[1], minY);
@@ -316,12 +341,31 @@ export class MapService {
     return [centerX, centerY];
   }
 
-  setCursorOnLayer(layerId: LayerId) {
+  setCursorOnLayer(layerId: LayerId): void {
     this.map.on('mouseenter', layerId, () => {
       this.map.getCanvas().style.cursor = 'pointer';
     });
     this.map.on('mouseleave', layerId, () => {
       this.map.getCanvas().style.cursor = '';
+    });
+  }
+
+  setZoomingOnCluster(): void {
+    this.map.on('click', SourceId.Clusters, (e) => {
+      const features = this.map.queryRenderedFeatures(e.point, {
+        layers: [SourceId.Clusters],
+      }) as any;
+      const clusterId = features[0].properties?.['cluster_id'];
+      const source = this.map.getSource(
+        SourceId.Clusters
+      ) as mapboxgl.GeoJSONSource;
+      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        if (err) return;
+        this.map.easeTo({
+          center: features[0].geometry?.coordinates as mapboxgl.LngLatLike,
+          zoom: zoom,
+        });
+      });
     });
   }
 
