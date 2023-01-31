@@ -8,9 +8,13 @@ export const TOKEN_MAPTILER = 'SoL71Zyf7SmLrVYWC7fQ';
 export const MAP_STYLE_URL =
   'https://api.maptiler.com/maps/eef16200-c4cc-4285-9370-c71ca24bb42d/style.json';
 
+const DEFAULT_ZOOM_VALUE = 10;
+export const MEDIUM_ZOOM_VALUE = 11;
+export const LARGE_ZOOM_VALUE = 14;
+
 export const MAP_OPTIONS: MapOptions = {
   center: [-96.7, 32.823],
-  zoom: 10,
+  zoom: DEFAULT_ZOOM_VALUE,
 };
 
 export const CLUSTER_SOURCE_OPTIONS = {

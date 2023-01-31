@@ -4,9 +4,11 @@ import { Pin } from '../../types/types';
 import {
   CLUSTER_SOURCE_OPTIONS,
   DataView,
+  LARGE_ZOOM_VALUE,
   LayerId,
   MAP_OPTIONS,
   MAP_STYLE_URL,
+  MEDIUM_ZOOM_VALUE,
   SourceId,
   TOKEN_MAPBOXGL,
   TOKEN_MAPTILER,
@@ -21,7 +23,7 @@ import { MapStoreState } from '../../models/map/types';
 export class MapService {
   map: mapboxgl.Map;
   pins: Pin[] = [];
-  pinsOnScreen: any = {};
+  pinsOnScreen: { [key: number]: mapboxgl.Marker } = {};
   selectedPinEl: HTMLElement | null = null;
   dataView: DataView;
 
@@ -191,7 +193,7 @@ export class MapService {
         const lngLat = this.pinsOnScreen[key].getLngLat();
         this.map.flyTo({
           center: [lngLat['lng'], lngLat['lat']],
-          zoom: 14,
+          zoom: LARGE_ZOOM_VALUE,
         });
       });
     }
@@ -202,12 +204,12 @@ export class MapService {
       if (
         !e.features ||
         !('coordinates' in e.features[0].geometry) ||
-        this.map.getZoom() >= 14
+        this.map.getZoom() >= LARGE_ZOOM_VALUE
       )
         return;
       this.map.flyTo({
         center: e.features[0].geometry.coordinates as mapboxgl.LngLatLike,
-        zoom: 14,
+        zoom: LARGE_ZOOM_VALUE,
       });
     });
   }
@@ -269,10 +271,6 @@ export class MapService {
 
       const description = `<p>${name}</p><p>${streetAddress}</p><img src="${photo}"/>`;
 
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-      }
-
       new mapboxgl.Popup()
         .setLngLat(coordinates)
         .setHTML(description)
@@ -291,7 +289,7 @@ export class MapService {
         const description = `<p>${name}</p><p>${streetAddress}</p><img src="${photo}" alt=""/>`;
 
         this.pinsOnScreen[pin.id]
-          .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(description))
+          .setPopup(new mapboxgl.Popup().setHTML(description))
           .addTo(this.map);
       });
     }
@@ -335,7 +333,7 @@ export class MapService {
 
     this.map.flyTo({
       center: coordinates,
-      zoom: 11,
+      zoom: MEDIUM_ZOOM_VALUE,
     });
   }
 
@@ -374,6 +372,7 @@ export class MapService {
       const source = this.map.getSource(
         SourceId.Clusters
       ) as mapboxgl.GeoJSONSource;
+
       source.getClusterExpansionZoom(clusterId, (err, zoom) => {
         if (err) return;
         this.map.easeTo({
