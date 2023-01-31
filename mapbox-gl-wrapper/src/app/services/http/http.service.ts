@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { catchError, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { PinsData } from '../../types/types';
+import { PlacesData } from '../../types/types';
 import { HttpPath, REQUEST_TOKEN } from './constants';
 
 @Injectable({
@@ -10,10 +10,10 @@ import { HttpPath, REQUEST_TOKEN } from './constants';
 export class HttpService {
   constructor(private http: HttpClient) {}
 
-  fetchData(): Observable<PinsData> {
+  fetchData(): Observable<PlacesData> {
     return this.http
-      .get<PinsData>(HttpPath.FetchPinsUrl)
-      .pipe(catchError(this.handleError<PinsData>({ records: [] })));
+      .get<PlacesData>(HttpPath.FetchPinsUrl)
+      .pipe(catchError(this.handleError<PlacesData>({ records: [] })));
   }
 
   private handleError<T>(res?: T) {

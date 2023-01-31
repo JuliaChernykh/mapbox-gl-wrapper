@@ -3,11 +3,11 @@ export type MapOptions = {
   zoom: number;
 };
 
-export type PinsData = {
-  records: Record[];
+export type PlacesData = {
+  records: Place[];
 };
 
-type Record = {
+type Place = {
   name: string;
   listID: number;
   propertyID: number;
