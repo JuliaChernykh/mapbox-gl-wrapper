@@ -6,6 +6,7 @@ import { Pin } from '../../types/types';
 
 const initialState: MapStoreState = {
   pins: [],
+  pinsLoadedSuccessfully: false,
   selectedDataView: DataView.IndividualPins,
 };
 
@@ -30,6 +31,6 @@ export const mapStoreReducer = createReducer(
       },
       id: idx,
     }));
-    return { ...state, pins: pins };
+    return { ...state, pins: pins, pinsLoadedSuccessfully: true };
   })
 );

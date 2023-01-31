@@ -1,5 +1,7 @@
 <div class="container">
-  <button (click)="handleLoadData()" [disabled]="isLoadDataButtonClicked" class="button">Load data</button>
+  <button (click)="handleLoadData()" [disabled]="isLoadDataButtonClicked && pinsLoadedSuccessfully$" class="button">Load
+    data
+  </button>
   <div class="radio-button">
     <div>
       <input (change)="setSelected(DataView.IndividualPins)" [checked]="selectedDataView$ === DataView.IndividualPins"
@@ -21,4 +23,6 @@
     select
   </button>
   <button (click)="enablePopups()" [disabled]="isEnablePopupsButtonClicked" class="button">Enable popups</button>
+  <button (click)="addLocationsLis()" [disabled]="isAddLocationsListButtonClicked" class="button">Add locations list
+  </button>
 </div>

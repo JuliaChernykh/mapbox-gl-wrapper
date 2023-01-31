@@ -1,3 +1,7 @@
+body {
+  font-family: 'Open Sans', sans-serif;
+}
+
 .pin {
   background-image: url("../src/images/pin-icon.png");
   background-size: cover;
@@ -6,23 +10,9 @@
   cursor: pointer;
 }
 
-/*.pin.favorite {*/
-/*  background-image: url("../src/images/heart-icon.png");*/
-/*  height: 30px;*/
-/*  width: 30px;*/
-/*}*/
-
 .pin.selected {
-  background-image: url("../src/images/pin-selected-icon.png");
-  height: 30px;
-  width: 30px;
+  background-image: url("../src/images/pin-icon-selected.png");
 }
-
-/*.pin.favorite.selected {*/
-/*  background-image: url("../src/images/heart-icon-selected.png");*/
-/*  height: 30px;*/
-/*  width: 30px;*/
-/*}*/
 
 .mapboxgl-popup {
   max-width: 200px;
@@ -36,4 +26,26 @@
 
 .mapboxgl-popup-content > button {
   outline: none;
+}
+
+.listings {
+  height: 100%;
+  overflow: auto;
+  padding-bottom: 60px;
+}
+
+.listings .item {
+  border-bottom: 1px solid #ccc;
+  padding: 10px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.listings .item .title {
+  display: block;
+  color: black;
+}
+
+.listings .item.active {
+  background-color: #F2E1CF;
 }

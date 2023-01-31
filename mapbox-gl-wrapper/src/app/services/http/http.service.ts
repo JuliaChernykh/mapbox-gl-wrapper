@@ -16,25 +16,6 @@ export class HttpService {
       .pipe(catchError(this.handleError<PinsData>({ records: [] })));
   }
 
-  updateFavorites(
-    listID: number,
-    propertyID: number,
-    isFavorite: boolean
-  ): Observable<any> {
-    return this.http
-      .post(
-        HttpPath.UpdateFavoritesUrl,
-        {
-          listID: listID.toString(),
-          propertyID,
-          isFavorite,
-          token: REQUEST_TOKEN,
-        },
-        { responseType: 'text' }
-      )
-      .pipe(catchError(this.handleError<any>()));
-  }
-
   private handleError<T>(res?: T) {
     return (error: any): Observable<T> => {
       console.error(error);
