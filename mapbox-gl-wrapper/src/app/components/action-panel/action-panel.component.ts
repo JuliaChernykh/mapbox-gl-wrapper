@@ -12,10 +12,12 @@ import { setSelectedDataView } from '../../models/map/map.actions';
 })
 export class ActionPanelComponent implements OnInit {
   selectedDataView$: DataView;
+  pinsLoadedSuccessfully$: boolean;
   isLoadDataButtonClicked: boolean = false;
   isEnableZoomingToPinButtonClicked: boolean = false;
   isEnablePopupsButtonClicked: boolean = false;
   isEnableChangingPinButtonClicked: boolean = false;
+  isAddLocationsListButtonClicked: boolean = false;
 
   constructor(
     private mapService: MapService,
@@ -32,6 +34,11 @@ export class ActionPanelComponent implements OnInit {
       .subscribe((dataView) => {
         this.selectedDataView$ = dataView;
       });
+    this.store
+      .select((state) => state.mapStore.pinsLoadedSuccessfully)
+      .subscribe((loadedSuccessfully) => {
+        this.pinsLoadedSuccessfully$ = loadedSuccessfully;
+      });
   }
 
   handleLoadData(): void {
@@ -44,24 +51,35 @@ export class ActionPanelComponent implements OnInit {
     this.isEnablePopupsButtonClicked = false;
     this.isEnableZoomingToPinButtonClicked = false;
     this.isEnableChangingPinButtonClicked = false;
+    this.isAddLocationsListButtonClicked = false;
   }
 
   handleCenterMapByPins(): void {
+    if (!this.pinsLoadedSuccessfully$) return;
     this.mapService.centerMapByPins();
   }
 
   enableZoomingToPin(): void {
+    if (!this.pinsLoadedSuccessfully$) return;
     this.mapService.enableZoomingToPin();
     this.isEnableZoomingToPinButtonClicked = true;
   }
 
   enablePopups(): void {
+    if (!this.pinsLoadedSuccessfully$) return;
     this.mapService.enablePopups();
     this.isEnablePopupsButtonClicked = true;
   }
 
   enableChangingPin(): void {
+    if (!this.pinsLoadedSuccessfully$) return;
     this.mapService.enableChangingPin();
     this.isEnableChangingPinButtonClicked = true;
+  }
+
+  addLocationsLis(): void {
+    if (!this.pinsLoadedSuccessfully$) return;
+    this.mapService.drawLocationList();
+    this.isAddLocationsListButtonClicked = true;
   }
 }

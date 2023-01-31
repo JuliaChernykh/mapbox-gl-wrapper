@@ -5,3 +5,14 @@
   right: 0;
   width: 75vw;
 }
+
+.sidebar {
+  position: absolute;
+  width: 25vw;
+  height: 40%;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  z-index: 100001;
+  padding-left: 16px;
+}

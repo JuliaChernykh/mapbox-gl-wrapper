@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import * as mapboxgl from 'mapbox-gl';
-import { MapOptions, Pin } from '../../types/types';
+import { Pin } from '../../types/types';
 import {
   CLUSTER_SOURCE_OPTIONS,
   DataView,
@@ -20,7 +20,7 @@ import { MapStoreState } from '../../models/map/types';
 })
 export class MapService {
   map: mapboxgl.Map;
-  features: Pin[] = [];
+  pins: Pin[] = [];
   pinsOnScreen: any = {};
   selectedPinEl: HTMLElement | null = null;
   dataView: DataView;
@@ -31,24 +31,15 @@ export class MapService {
   ) {
     this.store
       .select((state) => state.mapStore.pins)
-      .subscribe((data) => {
-        this.features = data;
-        if (this.dataView === DataView.Clusters) {
-          this.drawClusteredPins();
-        } else {
-          this.drawIndividualPins();
-        }
+      .subscribe((pins) => {
+        this.pins = pins;
+        this.drawPins();
       });
     this.store
       .select((state) => state.mapStore.selectedDataView)
       .subscribe((dataView) => {
         this.dataView = dataView;
-        this.clearMap();
-        if (dataView === DataView.Clusters) {
-          this.drawClusteredPins();
-        } else {
-          this.drawIndividualPins();
-        }
+        this.redrawPins();
       });
   }
 
@@ -62,20 +53,32 @@ export class MapService {
     this.map.addControl(new mapboxgl.NavigationControl());
   }
 
-  drawIndividualPins(): void {
-    // TODO: remove clusters
-    if (this.features.length === 0) return;
+  drawPins(): void {
+    if (this.dataView === DataView.Clusters) {
+      this.drawClusteredPins();
+    } else {
+      this.drawIndividualPins();
+    }
+  }
 
-    for (const feature of this.features) {
-      const coords = feature.geometry.coordinates;
-      const id = feature.id;
+  redrawPins(): void {
+    this.clearMap();
+    this.drawPins();
+  }
+
+  drawIndividualPins(): void {
+    if (this.pins.length === 0) return;
+
+    for (const pin of this.pins) {
+      const coords = pin.geometry.coordinates;
+      const id = pin.id;
 
       const el = document.createElement('div');
       el.className = 'pin';
-      if (feature.properties.favorite) {
+      if (pin.properties.favorite) {
         el.classList.add('favorite');
       }
-      if (feature.properties.selected) {
+      if (pin.properties.selected) {
         el.classList.add('selected');
       }
       const marker = new mapboxgl.Marker({
@@ -88,14 +91,13 @@ export class MapService {
   }
 
   drawClusteredPins(): void {
-    // TODO: remove pins
-    if (this.features.length === 0) return;
+    if (this.pins.length === 0) return;
 
     this.map.addSource(SourceId.Clusters, {
       type: 'geojson',
       data: {
         type: 'FeatureCollection',
-        features: this.features as any,
+        features: this.pins as any,
       },
       ...CLUSTER_SOURCE_OPTIONS,
     });
@@ -256,13 +258,6 @@ export class MapService {
     } else {
       this.enablePopupForIndividualPin();
     }
-    //   document
-    //     ?.getElementById('toggleAddToFavorites')
-    //     ?.addEventListener('click', (event) => {
-    //       this.toggleAddToFavorites(listID, propertyID, !favorite);
-    //       e.features[0].properties.favorite = !favorite;
-    //     });
-    // });
   }
 
   enablePopupForClusteredPin(): void {
@@ -270,12 +265,9 @@ export class MapService {
       if (!e.features) return;
 
       const coordinates = e.features[0].geometry.coordinates.slice();
-      const { name, photo, streetAddress, favorite, listID, propertyID } =
-        e.features[0].properties;
+      const { name, photo, streetAddress } = e.features[0].properties;
 
-      const description = `<button id="toggleAddToFavorites">${
-        favorite ? 'Dislike' : 'Like'
-      }</button><p>${name}</p><p>${streetAddress}</p><img src="${photo}"/>`;
+      const description = `<p>${name}</p><p>${streetAddress}</p><img src="${photo}"/>`;
 
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
@@ -289,30 +281,53 @@ export class MapService {
   }
 
   enablePopupForIndividualPin(): void {
-    for (const feature of this.features) {
-      if (!this.pinsOnScreen[feature.id]) return;
+    for (const pin of this.pins) {
+      if (!this.pinsOnScreen[pin.id]) return;
 
-      const el = this.pinsOnScreen[feature.id].getElement();
+      const el = this.pinsOnScreen[pin.id].getElement();
       el.addEventListener('click', () => {
-        const { name, photo, streetAddress, favorite } = feature.properties;
+        const { name, photo, streetAddress } = pin.properties;
 
-        const description = `<button id="toggleAddToFavorites">${
-          favorite ? 'Dislike' : 'Like'
-        }</button><p>${name}</p><p>${streetAddress}</p><img src="${photo}" alt=""/>`;
+        const description = `<p>${name}</p><p>${streetAddress}</p><img src="${photo}" alt=""/>`;
 
-        this.pinsOnScreen[feature.id]
+        this.pinsOnScreen[pin.id]
           .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(description))
           .addTo(this.map);
       });
     }
   }
 
-  toggleAddToFavorites(
-    listID: number,
-    propertyID: number,
-    favorite: boolean
-  ): void {
-    this.httpService.updateFavorites(listID, propertyID, favorite);
+  drawLocationList() {
+    for (const pin of this.pins) {
+      const listings = document.getElementById('listings');
+      if (!listings) return;
+      const listing = listings.appendChild(document.createElement('div'));
+      listing.id = `listing-${pin.id}`;
+      listing.className = 'item';
+
+      const link = listing.appendChild(document.createElement('a'));
+      link.href = '#';
+      link.className = 'title';
+      link.id = `link-${pin.id}`;
+      link.innerHTML = `${pin.properties.name}`;
+
+      const details = listing.appendChild(document.createElement('div'));
+      details.innerHTML = `${pin.properties.streetAddress}`;
+
+      const el = this.pinsOnScreen[pin.id].getElement();
+      link.addEventListener('click', () => {
+        el.click();
+      });
+
+      el.addEventListener('click', () => {
+        const activeItem = document.getElementsByClassName('active');
+        if (activeItem[0]) {
+          activeItem[0].classList.remove('active');
+        }
+        const listing = document.getElementById(`listing-${pin.id}`);
+        listing?.classList.add('active');
+      });
+    }
   }
 
   centerMapByPins(): void {
@@ -325,9 +340,9 @@ export class MapService {
   }
 
   getCenterCoordinates(): [number, number] {
-    let [minX, minY] = this.features[0].geometry.coordinates;
-    let [maxX, maxY] = this.features[0].geometry.coordinates;
-    this.features.forEach(({ geometry }) => {
+    let [minX, minY] = this.pins[0].geometry.coordinates;
+    let [maxX, maxY] = this.pins[0].geometry.coordinates;
+    this.pins.forEach(({ geometry }) => {
       const { coordinates } = geometry;
       minX = Math.min(coordinates[0], minX);
       maxX = Math.max(coordinates[0], maxX);
